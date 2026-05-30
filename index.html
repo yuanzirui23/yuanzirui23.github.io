@@ -2,68 +2,121 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>多人联机聊天室</title>
+    <title>本地聊天室</title>
     <style>
-        * {margin: 0; padding: 0; box-sizing: border-box; font-family: "微软雅黑";}
-        body {background: #f5f5f5; max-width: 550px; margin: 20px auto; padding: 0 10px;}
-        .top {padding: 10px; background: #2481f6; color: #fff; border-radius: 8px 8px 0 0; text-align: center;}
-        .chat {height: 480px; background: #fff; padding: 15px; overflow-y: auto; border: 1px solid #eee;}
-        .msg {margin: 8px 0; max-width: 70%; line-height: 1.5; padding: 8px 12px; border-radius: 12px;}
-        .left {background: #f1f1f1; text-align: left;}
-        .right {background: #2481f6; color: #fff; margin-left: auto; text-align: right;}
-        .send-box {display: flex; gap: 8px; margin-top: 10px;}
-        #name {width: 120px; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none;}
-        #input {flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none;}
-        button {padding: 10px 20px; background: #2481f6; color: #fff; border: none; border-radius: 20px; cursor: pointer;}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "微软雅黑";
+        }
+        body {
+            background: #f0f2f5;
+            max-width: 500px;
+            margin: 20px auto;
+            padding: 10px;
+        }
+        .chat {
+            background: #fff;
+            height: 500px;
+            border-radius: 10px;
+            padding: 15px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+        }
+        .msg {
+            max-width: 70%;
+            padding: 8px 12px;
+            border-radius: 15px;
+            margin: 6px 0;
+        }
+        .my {
+            background: #0084ff;
+            color: #fff;
+            margin-left: auto;
+        }
+        .other {
+            background: #e4e6eb;
+            color: #333;
+        }
+        .box {
+            display: flex;
+            gap: 6px;
+        }
+        #name {
+            width: 80px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+        }
+        #content {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+        }
+        button {
+            padding: 10px 16px;
+            background: #0084ff;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-    <div class="top">多人联机聊天室</div>
     <div class="chat" id="chatBox"></div>
-    <div class="send-box">
-        <input type="text" id="name" placeholder="你的昵称" value="游客">
-        <input type="text" id="input" placeholder="输入消息，回车发送">
+    <div class="box">
+        <input id="name" placeholder="昵称" value="用户">
+        <input id="content" placeholder="输入消息">
         <button onclick="sendMsg()">发送</button>
     </div>
 
 <script>
-const url = "https://api.vvhan.com/api/chatroom";
-let chatBox = document.getElementById("chatBox");
-let input = document.getElementById("input");
+// 用浏览器本地存储共享消息，同电脑多窗口互通
+function getMsgList() {
+    let data = localStorage.getItem("chatData");
+    return data ? JSON.parse(data) : [];
+}
+function saveMsgList(list) {
+    localStorage.setItem("chatData", JSON.stringify(list));
+}
 
-// 拉取最新消息
-function getMsg() {
-    fetch(url)
-    .then(res => res.json())
-    .then(data => {
-        chatBox.innerHTML = "";
-        data.forEach(item => {
-            let div = document.createElement("div");
-            div.className = "msg left";
-            div.innerText = `${item.name}：${item.text}`;
-            chatBox.appendChild(div);
-        });
-        chatBox.scrollTop = chatBox.scrollHeight;
-    })
+// 渲染消息
+function render() {
+    let list = getMsgList();
+    let html = "";
+    let myName = document.getElementById("name").value;
+    list.forEach(item => {
+        if(item.name === myName) {
+            html += `<div class="msg my">${item.name}：${item.text}</div>`;
+        } else {
+            html += `<div class="msg other">${item.name}：${item.text}</div>`;
+        }
+    });
+    let box = document.getElementById("chatBox");
+    box.innerHTML = html;
+    box.scrollTop = box.scrollHeight;
 }
 
 // 发送消息
 function sendMsg() {
-    let name = document.getElementById("name").value.trim() || "游客";
-    let text = input.value.trim();
-    if(!text) return;
-    fetch(`${url}?name=${encodeURIComponent(name)}&text=${encodeURIComponent(text)}`);
-    input.value = "";
+    let name = document.getElementById("name").value.trim();
+    let text = document.getElementById("content").value.trim();
+    if(!name || !text) return;
+
+    let list = getMsgList();
+    list.push({name, text});
+    saveMsgList(list);
+    document.getElementById("content").value = "";
+    render();
 }
 
-// 回车发送
-input.addEventListener("keydown", e => {
-    if(e.key === "Enter") sendMsg();
-});
-
-// 定时刷新消息，实现联机
-getMsg();
-setInterval(getMsg, 2000);
+// 监听页面可见，自动刷新消息
+document.addEventListener("visibilitychange", render);
+// 初始加载
+render();
 </script>
 </body>
 </html>
