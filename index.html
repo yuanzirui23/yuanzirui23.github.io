@@ -1,122 +1,44 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>本地聊天室</title>
+    <title>聊天</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "微软雅黑";
-        }
-        body {
-            background: #f0f2f5;
-            max-width: 500px;
-            margin: 20px auto;
-            padding: 10px;
-        }
-        .chat {
-            background: #fff;
-            height: 500px;
-            border-radius: 10px;
-            padding: 15px;
-            overflow-y: auto;
-            margin-bottom: 10px;
-        }
-        .msg {
-            max-width: 70%;
-            padding: 8px 12px;
-            border-radius: 15px;
-            margin: 6px 0;
-        }
-        .my {
-            background: #0084ff;
-            color: #fff;
-            margin-left: auto;
-        }
-        .other {
-            background: #e4e6eb;
-            color: #333;
-        }
-        .box {
-            display: flex;
-            gap: 6px;
-        }
-        #name {
-            width: 80px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-        }
-        #content {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-        }
-        button {
-            padding: 10px 16px;
-            background: #0084ff;
-            color: #fff;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-        }
+        body { max-width: 500px; margin: 20px auto; background: #eee; }
+        #chat { height: 500px; background: white; padding: 15px; border-radius: 10px; overflow-y: auto; }
+        .msg { background: #0084ff; color: white; padding: 8px 12px; border-radius: 15px; margin: 5px 0; max-width: 70%; }
+        .input { display: flex; margin-top: 10px; gap: 5px; }
+        input { flex:1; padding:12px; border-radius:20px; border:1px solid #ccc; }
+        button { padding:12px 18px; background:#0084ff; color:white; border:none; border-radius:20px; }
     </style>
 </head>
 <body>
-    <div class="chat" id="chatBox"></div>
-    <div class="box">
-        <input id="name" placeholder="昵称" value="用户">
-        <input id="content" placeholder="输入消息">
-        <button onclick="sendMsg()">发送</button>
+    <div id="chat"></div>
+    <div class="input">
+        <input id="msg" placeholder="输入消息">
+        <button onclick="send()">发送</button>
     </div>
 
 <script>
-// 用浏览器本地存储共享消息，同电脑多窗口互通
-function getMsgList() {
-    let data = localStorage.getItem("chatData");
-    return data ? JSON.parse(data) : [];
-}
-function saveMsgList(list) {
-    localStorage.setItem("chatData", JSON.stringify(list));
-}
-
-// 渲染消息
-function render() {
-    let list = getMsgList();
+function showMsg() {
+    let list = JSON.parse(localStorage.getItem("chat") || "[]");
     let html = "";
-    let myName = document.getElementById("name").value;
-    list.forEach(item => {
-        if(item.name === myName) {
-            html += `<div class="msg my">${item.name}：${item.text}</div>`;
-        } else {
-            html += `<div class="msg other">${item.name}：${item.text}</div>`;
-        }
+    list.forEach(m => {
+        html += `<div class="msg">${m}</div>`;
     });
-    let box = document.getElementById("chatBox");
-    box.innerHTML = html;
-    box.scrollTop = box.scrollHeight;
+    document.getElementById("chat").innerHTML = html;
 }
 
-// 发送消息
-function sendMsg() {
-    let name = document.getElementById("name").value.trim();
-    let text = document.getElementById("content").value.trim();
-    if(!name || !text) return;
-
-    let list = getMsgList();
-    list.push({name, text});
-    saveMsgList(list);
-    document.getElementById("content").value = "";
-    render();
+function send() {
+    let txt = document.getElementById("msg").value.trim();
+    if(!txt) return;
+    let list = JSON.parse(localStorage.getItem("chat") || "[]");
+    list.push(txt);
+    localStorage.setItem("chat", JSON.stringify(list));
+    document.getElementById("msg").value = "";
 }
 
-// 监听页面可见，自动刷新消息
-document.addEventListener("visibilitychange", render);
-// 初始加载
-render();
+setInterval(showMsg, 500);
 </script>
 </body>
 </html>
